@@ -1,5 +1,4 @@
 #include "chatserver.hpp"
-
 #include <iostream>
 #include <functional>
 #include <string>
@@ -10,7 +9,7 @@ ChatServer::ChatServer(EventLoop *loop,
                        const string &nameArg)
     : _server(loop, listenAddr, nameArg), _loop(loop)
 {
-    // 注册链接回调
+    // 注册连接回调
     _server.setConnectionCallback(std::bind(&ChatServer::onConnection, this, _1));
 
     // 注册消息回调
@@ -26,12 +25,12 @@ void ChatServer::start()
     _server.start();
 }
 
-// 上报链接相关信息的回调函数
+// 回调函数:处理新连接和连接断开
 void ChatServer::onConnection(const TcpConnectionPtr &conn)
 {
 }
 
-// 上报读写事件相关信息的回调函数
+// 回调函数:处理已连接用户的读写事件 (接收消息)
 void ChatServer::onMessage(const TcpConnectionPtr &conn,
                            Buffer *buffer,
                            Timestamp time)
