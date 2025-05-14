@@ -121,3 +121,34 @@ void ChatService::reg(const TcpConnectionPtr& conn, json& js, Timestamp time)
         conn->send(response.dump());
     }
 }
+
+// 处理客户端异常退出
+void ChatService::clientCloseException(const TcpConnectionPtr& conn)
+{
+    User user;
+    bool isOnline = false;
+    {
+        std::lock_guard<std::mutex> lock(_connMutex);
+        // 遍历 _userConnMap，查找与断开连接 conn 匹配的项
+        for (auto it = _userConnMap.begin(); it != _userConnMap.end(); it++)
+        {
+            // 比较是否是同一个连接
+            if (it->second == conn)
+            {
+                // 找到对应用户id
+                user.setId(it->first);
+                // 从map表中删除用户连接信息
+                _userConnMap.erase(it);
+                // 该用户之前是登录状态
+                isOnline = true;
+                break;
+            }
+        }
+    }
+    // 更新用户的状态信息
+    if (isOnline && user.getId() != -1)
+    {
+        user.setState("offline");
+        _userModel.updateState(user);
+    }
+}
