@@ -17,6 +17,7 @@ ChatService::ChatService()
 {
     _msgHandlerMap.insert({LOGIN_MSG, std::bind(&ChatService::login, this, _1, _2, _3)});
     _msgHandlerMap.insert({REG_MSG, std::bind(&ChatService::reg, this, _1, _2, _3)});
+    _msgHandlerMap.insert({ONE_CHAT_MSG, std::bind(&ChatService::oneChat, this, _1, _2, _3)});
 }
 
 // 获取消息对应的处理器
@@ -126,7 +127,7 @@ void ChatService::reg(const TcpConnectionPtr& conn, json& js, Timestamp time)
 void ChatService::clientCloseException(const TcpConnectionPtr& conn)
 {
     User user;
-    bool isOnline = false;
+    bool userState = false;
     {
         std::lock_guard<std::mutex> lock(_connMutex);
         // 遍历 _userConnMap，查找与断开连接 conn 匹配的项
@@ -140,15 +141,32 @@ void ChatService::clientCloseException(const TcpConnectionPtr& conn)
                 // 从map表中删除用户连接信息
                 _userConnMap.erase(it);
                 // 该用户之前是登录状态
-                isOnline = true;
+                userState = true;
                 break;
             }
         }
     }
     // 更新用户的状态信息
-    if (isOnline && user.getId() != -1)
+    if (userState && user.getId() != -1)
     {
         user.setState("offline");
         _userModel.updateState(user);
     }
+}
+
+// 一对一聊天业务
+void ChatService::oneChat(const TcpConnectionPtr& conn, json& js, Timestamp time)
+{
+    int toid = js["to"].get<int>();
+    {
+        std::lock_guard<std::mutex> lock(_connMutex);
+        auto it = _userConnMap.find(toid);
+        if (it != _userConnMap.end())
+        {
+            // toid在线，转发消息      服务器主动推送消息给toid用户
+            it->second->send(js.dump());
+            return;
+        }
+    }
+    // toid不在线，存储离线消息
 }
