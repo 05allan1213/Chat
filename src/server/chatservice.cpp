@@ -36,10 +36,56 @@ MsgHandler ChatService::getHandler(int msgid)
     }
 }
 
-// 处理登录业务
+// 处理登录业务  id + passward
 void ChatService::login(const TcpConnectionPtr& conn, json& js, Timestamp time)
 {
-    LOG_INFO << "do login service!!! msg content: " << js.dump();
+    int id = js["id"].get<int>();
+    std::string pwd = js["password"];
+
+    User user = _userModel.query(id);
+    if (user.getId() == id && user.getPwd() == pwd)
+    {
+        // 登录成功，但是用户之前已登录
+        if (user.getState() == "online")
+        {
+            json response;
+            response["msgid"] = LOGIN_MSG_ACK;
+            response["errno"] = 2;
+            response["errmsg"] = "该账户已登录";
+            conn->send(response.dump());
+        }
+        // 登录成功，并且之前没有登录
+        else
+        {
+            // 修改用户状态为online
+            user.setState("online");
+            _userModel.updateState(user);
+
+            json response;
+            response["msgid"] = LOGIN_MSG_ACK;
+            response["errno"] = 0;
+            response["id"] = user.getId();
+            response["name"] = user.getName();
+            conn->send(response.dump());
+        }
+    }
+    else
+    {
+        // 该用户不存在/用户存在但是密码错误，登录失败
+        json response;
+        response["msgid"] = LOGIN_MSG_ACK;
+        if (user.getId() == -1)
+        {
+            response["errno"] = 3;
+            response["errmsg"] = "该用户不存在";
+        }
+        else if (user.getPwd() != pwd)
+        {
+            response["errno"] = 4;
+            response["errmsg"] = "用户存在但是密码错误";
+        }
+        conn->send(response.dump());
+    }
 }
 // 处理注册业务  name + passward
 void ChatService::reg(const TcpConnectionPtr& conn, json& js, Timestamp time)
@@ -66,6 +112,7 @@ void ChatService::reg(const TcpConnectionPtr& conn, json& js, Timestamp time)
         json response;
         response["msgid"] = REG_MSG_ACK;
         response["errno"] = 1;
+        response["errmsg"] = "注册失败";
         conn->send(response.dump());
     }
 }
