@@ -38,6 +38,13 @@ MsgHandler ChatService::getHandler(int msgid)
     }
 }
 
+// 处理服务器异常退出
+void ChatService::reset()
+{
+    // 把处于online状态的用户，设置成offline
+    _userModel.resetState();
+}
+
 // 处理登录业务  id + passward
 void ChatService::login(const TcpConnectionPtr& conn, json& js, Timestamp time)
 {
