@@ -5,7 +5,7 @@
 // 数据库配置信息
 static std::string server = "127.0.0.1";
 static std::string user = "root";
-static std::string password = "123456";
+static std::string password = "801026qwe";
 static std::string dbname = "chat";
 
 MySQL::MySQL() { _conn = mysql_init(nullptr); }
