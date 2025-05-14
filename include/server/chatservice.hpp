@@ -5,8 +5,9 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "model/usermodel.hpp"
 #include "nlohmann/json.hpp"
+#include "offlinemessagemodel.hpp"
+#include "usermodel.hpp"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -45,4 +46,5 @@ class ChatService
 
     // 数据操作类对象
     UserModel _userModel;
+    OfflineMsgModel _offlineMsgModel;
 };

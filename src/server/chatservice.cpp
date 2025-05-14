@@ -1,6 +1,7 @@
 #include "chatservice.hpp"
 
 #include <muduo/base/Logging.h>
+#include <vector>
 
 #include "public.hpp"
 
@@ -63,7 +64,7 @@ void ChatService::login(const TcpConnectionPtr& conn, json& js, Timestamp time)
                 std::lock_guard<std::mutex> lock(_connMutex);
                 _userConnMap.insert({id, conn});
             }
-            // 修改用户状态为online
+            // 更新用户状态为online
             user.setState("online");
             _userModel.updateState(user);
 
@@ -72,6 +73,15 @@ void ChatService::login(const TcpConnectionPtr& conn, json& js, Timestamp time)
             response["errno"] = 0;
             response["id"] = user.getId();
             response["name"] = user.getName();
+
+            // 查询该用户的离线消息
+            std::vector<std::string> vec = _offlineMsgModel.query(id);
+            if (!vec.empty())
+            {
+                response["offlinemsg"] = vec;
+                // 读取后，删除离线消息
+                _offlineMsgModel.remove(id);
+            }
             conn->send(response.dump());
         }
     }
@@ -169,4 +179,5 @@ void ChatService::oneChat(const TcpConnectionPtr& conn, json& js, Timestamp time
         }
     }
     // toid不在线，存储离线消息
+    _offlineMsgModel.insert(toid, js.dump());
 }

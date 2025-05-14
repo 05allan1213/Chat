@@ -16,7 +16,7 @@ bool UserModel::insert(User& user)
     MySQL mysql;
     if (mysql.connect())
     {
-        // 3. 执行插入语句
+        // 3. 执行插入操作
         if (mysql.update(sql))
         {
             // 获取插入成功的用户数据生成的主键id
@@ -38,7 +38,7 @@ User UserModel::query(int id)
     MySQL mysql;
     if (mysql.connect())
     {
-        // 3. 执行查询语句
+        // 3. 执行查询操作
         MYSQL_RES* res = mysql.query(sql);
         if (res != nullptr)
         {
@@ -72,7 +72,7 @@ bool UserModel::updateState(User user)
     MySQL mysql;
     if (mysql.connect())
     {
-        // 3. 执行更新语句
+        // 3. 执行更新操作
         if (mysql.update(sql))
         {
             return true;
