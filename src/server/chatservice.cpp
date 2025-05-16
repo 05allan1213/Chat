@@ -18,6 +18,7 @@ ChatService::ChatService()
 {
     // 用户基本业务管理相关事件处理回调注册
     _msgHandlerMap.insert({LOGIN_MSG, std::bind(&ChatService::login, this, _1, _2, _3)});
+    _msgHandlerMap.insert({LOGINOUT_MSG, std::bind(&ChatService::loginout, this, _1, _2, _3)});
     _msgHandlerMap.insert({REG_MSG, std::bind(&ChatService::reg, this, _1, _2, _3)});
     _msgHandlerMap.insert({ONE_CHAT_MSG, std::bind(&ChatService::oneChat, this, _1, _2, _3)});
     _msgHandlerMap.insert({ADD_FRIEND_MSG, std::bind(&ChatService::addFriend, this, _1, _2, _3)});
@@ -68,7 +69,7 @@ void ChatService::login(const TcpConnectionPtr& conn, json& js, Timestamp time)
             json response;
             response["msgid"] = LOGIN_MSG_ACK;
             response["errno"] = 2;
-            response["errmsg"] = "该账户已登录";
+            response["errmsg"] = "This account is logged in";
             conn->send(response.dump());
         }
         // 登录成功，并且之前没有登录
@@ -124,12 +125,12 @@ void ChatService::login(const TcpConnectionPtr& conn, json& js, Timestamp time)
         if (user.getId() == -1)
         {
             response["errno"] = 3;
-            response["errmsg"] = "该用户不存在";
+            response["errmsg"] = "This user does not exist";
         }
         else if (user.getPwd() != pwd)
         {
             response["errno"] = 4;
-            response["errmsg"] = "用户存在但是密码错误";
+            response["errmsg"] = "The user exists but the password is wrong";
         }
         conn->send(response.dump());
     }
@@ -159,9 +160,28 @@ void ChatService::reg(const TcpConnectionPtr& conn, json& js, Timestamp time)
         json response;
         response["msgid"] = REG_MSG_ACK;
         response["errno"] = 1;
-        response["errmsg"] = "注册失败";
+        response["errmsg"] = "Registration failed";
         conn->send(response.dump());
     }
+}
+
+// 处理注销业务
+void ChatService::loginout(const TcpConnectionPtr& conn, json& js, Timestamp time)
+{
+    int userid = js["id"].get<int>();
+
+    {
+        std::lock_guard<std::mutex> lock(_connMutex);
+        auto it = _userConnMap.find(userid);
+        if (it != _userConnMap.end())
+        {
+            _userConnMap.erase(it);
+        }
+    }
+
+    // 更新用户的状态信息
+    User user(userid, "", "", "offline");
+    _userModel.updateState(user);
 }
 
 // 处理客户端异常退出
