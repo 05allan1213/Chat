@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "friendmodel.hpp"
+#include "groupmodel.hpp"
 #include "nlohmann/json.hpp"
 #include "offlinemessagemodel.hpp"
 #include "usermodel.hpp"
@@ -30,6 +31,12 @@ class ChatService
     void oneChat(const TcpConnectionPtr& conn, json& js, Timestamp time);
     // 添加好友业务
     void addFriend(const TcpConnectionPtr& conn, json& js, Timestamp time);
+    // 创建群组业务
+    void createGroup(const TcpConnectionPtr& conn, json& js, Timestamp time);
+    // 加入群组业务
+    void addGroup(const TcpConnectionPtr& conn, json& js, Timestamp time);
+    // 群组聊天业务
+    void groupChat(const TcpConnectionPtr& conn, json& js, Timestamp time);
     // 获取消息对应的处理器
     MsgHandler getHandler(int msgid);
     // 处理客户端异常退出
@@ -53,4 +60,5 @@ class ChatService
     UserModel _userModel;
     OfflineMsgModel _offlineMsgModel;
     FriendModel _friendModel;
+    GroupModel _groupModel;
 };
